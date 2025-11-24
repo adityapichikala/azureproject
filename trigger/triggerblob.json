@@ -1,0 +1,24 @@
+{
+	"name": "triggerblob",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Stopped",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "pipeline2",
+					"type": "PipelineReference"
+				}
+			}
+		],
+		"type": "BlobEventsTrigger",
+		"typeProperties": {
+			"blobPathBeginsWith": "/json-input/blobs/",
+			"ignoreEmptyBlobs": true,
+			"scope": "/subscriptions/bf645514-2431-4a45-9594-5c800ab35957/resourceGroups/Data_Engineering_Project/providers/Microsoft.Storage/storageAccounts/step1blob",
+			"events": [
+				"Microsoft.Storage.BlobCreated"
+			]
+		}
+	}
+}

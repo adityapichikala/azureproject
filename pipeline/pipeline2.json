@@ -1,6 +1,16 @@
 {
 	"name": "pipeline2",
 	"properties": {
+		"parameters": {
+			"inputFileName": {
+				"type": "string",
+				"defaultValue": "@triggerBody().fileName"
+			},
+			"inputFolderPath": {
+				"type": "string",
+				"defaultValue": "@triggerBody().folderPath"
+			}
+		},
 		"annotations": []
 	}
 }
