@@ -29,15 +29,13 @@
 				"userProperties": [],
 				"typeProperties": {
 					"source": {
-						"type": "JsonSource",
-						"storeSettings": {
-							"type": "AzureBlobFSReadSettings",
-							"recursive": true,
-							"enablePartitionDiscovery": false
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "@SELECT * FROM (pipeline().parameters.schema).@{pipeline().parameters.table} WHERE @{pipeline().parameters.cdc} > '@{activity('cdc').output.firstRow[0].cdc}'",
+							"type": "Expression"
 						},
-						"formatSettings": {
-							"type": "JsonReadSettings"
-						}
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
 					},
 					"sink": {
 						"type": "ParquetSink",
@@ -48,11 +46,19 @@
 							"type": "ParquetWriteSettings"
 						}
 					},
-					"enableStaging": false
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
 				},
 				"inputs": [
 					{
-						"referenceName": "Json1",
+						"referenceName": "AzureSqlTable1",
 						"type": "DatasetReference"
 					}
 				],
@@ -61,10 +67,7 @@
 						"referenceName": "Parquet1",
 						"type": "DatasetReference",
 						"parameters": {
-							"container": {
-								"value": "bronze",
-								"type": "Expression"
-							},
+							"container": "bronze",
 							"folder": {
 								"value": "@pipeline().parameters.table",
 								"type": "Expression"
@@ -120,15 +123,18 @@
 					},
 					"dataset": {
 						"referenceName": "Json1",
-						"type": "DatasetReference"
+						"type": "DatasetReference",
+						"parameters": {
+							"container": "bronze",
+							"folder": "source",
+							"file": "cdc.json"
+						}
 					}
 				}
 			},
 			{
 				"name": "last_cdc_update",
 				"type": "Copy",
-				"state": "Inactive",
-				"onInactiveMarkAs": "Succeeded",
 				"dependsOn": [
 					{
 						"activity": "Script1",
@@ -152,7 +158,7 @@
 							{
 								"name": "cdc",
 								"value": {
-									"value": "@activity('Script1').output.resultSets[0].value[0].Script1",
+									"value": "@activity('Script1').output.resultSets[0].rows[0].Script1",
 									"type": "Expression"
 								}
 							}
@@ -180,13 +186,23 @@
 				"inputs": [
 					{
 						"referenceName": "Json2",
-						"type": "DatasetReference"
+						"type": "DatasetReference",
+						"parameters": {
+							"container": "bronze",
+							"folder": "source",
+							"file": "cdc.json"
+						}
 					}
 				],
 				"outputs": [
 					{
-						"referenceName": "Json2",
-						"type": "DatasetReference"
+						"referenceName": "Json1",
+						"type": "DatasetReference",
+						"parameters": {
+							"container": "bronze",
+							"folder": "source",
+							"file": "cdc.json"
+						}
 					}
 				]
 			},
