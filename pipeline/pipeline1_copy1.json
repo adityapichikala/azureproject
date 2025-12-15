@@ -134,7 +134,7 @@
 									}
 								},
 								"dataset": {
-									"referenceName": "Json1",
+									"referenceName": "Json_dynamic",
 									"type": "DatasetReference",
 									"parameters": {
 										"container": "bronze",
@@ -274,7 +274,7 @@
 										],
 										"outputs": [
 											{
-												"referenceName": "Json1",
+												"referenceName": "Json_dynamic",
 												"type": "DatasetReference",
 												"parameters": {
 													"container": "bronze",

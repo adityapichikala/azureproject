@@ -3,7 +3,7 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "Copydata1",
+				"name": "SQltoDatalake",
 				"type": "Copy",
 				"dependsOn": [
 					{
@@ -31,7 +31,7 @@
 					"source": {
 						"type": "AzureSqlSource",
 						"sqlReaderQuery": {
-							"value": "@SELECT * FROM (pipeline().parameters.schema).@{pipeline().parameters.table} WHERE @{pipeline().parameters.cdc} >\n'@{if(empty(pipeline().parameters.from_date),activity('cdc').output.firstRow.cdc,pipeline().parameters.from_date)}'",
+							"value": "SELECT * FROM @{pipeline().parameters.schema}.@{pipeline().parameters.table}\nWHERE @{pipeline().parameters.cdc} > '@{IF(\n  EMPTY(pipeline().parameters.from_date),\n  activity('cdc').output.firstRow.cdc,\n  pipeline().parameters.from_date)}'",
 							"type": "Expression"
 						},
 						"queryTimeout": "02:00:00",
@@ -122,7 +122,7 @@
 						}
 					},
 					"dataset": {
-						"referenceName": "Json1",
+						"referenceName": "Json_dynamic",
 						"type": "DatasetReference",
 						"parameters": {
 							"container": "bronze",
@@ -137,7 +137,7 @@
 				"type": "IfCondition",
 				"dependsOn": [
 					{
-						"activity": "Copydata1",
+						"activity": "SQltoDatalake",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -146,12 +146,12 @@
 				"userProperties": [],
 				"typeProperties": {
 					"expression": {
-						"value": "@greater(activity('Copydata1').output.dataread,0)",
+						"value": "@greater(activity('SQltoDatalake').output.dataread,0)",
 						"type": "Expression"
 					},
 					"ifFalseActivities": [
 						{
-							"name": "Delete1",
+							"name": "Deleteemptyfile",
 							"type": "Delete",
 							"dependsOn": [],
 							"policy": {
@@ -173,18 +173,12 @@
 											"type": "Expression"
 										},
 										"file": {
-											"value": "@pipeline().parameters.table",
+											"value": "@concat(pipeline().parameters.table,'_',variables('current'))",
 											"type": "Expression"
 										}
 									}
 								},
-								"logStorageSettings": {
-									"linkedServiceName": {
-										"referenceName": "AzureDataLakeStorage1",
-										"type": "LinkedServiceReference"
-									}
-								},
-								"enableLogging": true,
+								"enableLogging": false,
 								"storeSettings": {
 									"type": "AzureBlobFSReadSettings",
 									"recursive": true,
@@ -199,7 +193,7 @@
 							"type": "Copy",
 							"dependsOn": [
 								{
-									"activity": "Script1",
+									"activity": "max_cdc",
 									"dependencyConditions": [
 										"Succeeded"
 									]
@@ -220,7 +214,7 @@
 										{
 											"name": "cdc",
 											"value": {
-												"value": "@activity('Script1').output.resultSets[0].rows[0].Script1",
+												"value": "@activity('max_cdc').output.resultSets[0].rows[0].max_cdc",
 												"type": "Expression"
 											}
 										}
@@ -247,18 +241,18 @@
 							},
 							"inputs": [
 								{
-									"referenceName": "Json2",
+									"referenceName": "Json_dynamic",
 									"type": "DatasetReference",
 									"parameters": {
 										"container": "bronze",
 										"folder": "source",
-										"file": "cdc.json"
+										"file": "empty.json"
 									}
 								}
 							],
 							"outputs": [
 								{
-									"referenceName": "Json1",
+									"referenceName": "Json_dynamic",
 									"type": "DatasetReference",
 									"parameters": {
 										"container": "bronze",
@@ -269,7 +263,7 @@
 							]
 						},
 						{
-							"name": "Script1",
+							"name": "max_cdc",
 							"type": "Script",
 							"dependsOn": [],
 							"policy": {
@@ -289,7 +283,7 @@
 									{
 										"type": "Query",
 										"text": {
-											"value": "@concat('SELECT MAX(', pipeline().parameters.cdc, ') AS max_cdc FROM ', pipeline().parameters.schema, '.', pipeline().parameters.table)",
+											"value": "@concat(\n    'SELECT max(', pipeline().parameters.cdc, ') AS max_cdc FROM ',\n    pipeline().parameters.schema, '.', pipeline().parameters.table\n)\n",
 											"type": "Expression"
 										}
 									}
